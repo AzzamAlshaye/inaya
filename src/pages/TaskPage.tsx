@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import type { IntervalUnit } from '../types';
 import { useI18n } from '../i18n';
 import { useStore } from '../state/store';
-import { addInterval, taskStatus, todayISO } from '../lib/dates';
+import { firstDue, taskStatus, todayISO } from '../lib/dates';
 import { PageHeader } from '../components/Layout';
 import { IntervalInput } from '../components/Pickers';
 import { Icon } from '../components/Icon';
@@ -28,8 +28,15 @@ export function TaskPage() {
   const [title, setTitle] = useState(task ? taskTitle(task) : '');
   const [every, setEvery] = useState(task?.every ?? 1);
   const [unit, setUnit] = useState<IntervalUnit>(task?.unit ?? 'month');
-  const [nextDue, setNextDue] = useState(task?.nextDue ?? addInterval(todayISO(), 1, 'month'));
-  const [dueTouched, setDueTouched] = useState(!isNew);
+  const [nextDue, setNextDue] = useState(task?.nextDue ?? '');
+  // New tasks: "done before?" choice and its date (start date or last-done date).
+  const today = todayISO();
+  const [doneBefore, setDoneBefore] = useState(false);
+  const [startDate, setStartDate] = useState(() => {
+    const itemStart = store.data.items.find((i) => i.id === itemId)?.startDate;
+    return itemStart && itemStart > today ? itemStart : today;
+  });
+  const [lastDoneDate, setLastDoneDate] = useState(today);
   const [notes, setNotes] = useState(task?.notes ?? '');
   const [remind, setRemind] = useState(task?.remind ?? true);
   const [paused, setPaused] = useState(task?.paused ?? false);
@@ -55,13 +62,17 @@ export function TaskPage() {
   const changeInterval = (n: number, u: IntervalUnit) => {
     setEvery(n);
     setUnit(u);
-    // For new tasks keep the suggested due date in sync until the user edits it.
-    if (!dueTouched && n > 0) setNextDue(addInterval(todayISO(), n, u));
   };
+
+  const newDue =
+    isNew && every > 0
+      ? firstDue(every, unit, startDate || today, doneBefore ? lastDoneDate || today : undefined)
+      : '';
+  const dueToSave = isNew ? newDue : nextDue;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || every < 1 || !nextDue) {
+    if (!title.trim() || every < 1 || !dueToSave || (isNew && doneBefore && lastDoneDate > today)) {
       setError(true);
       return;
     }
@@ -75,10 +86,11 @@ export function TaskPage() {
       title: keepKey ? undefined : title.trim(),
       every,
       unit,
-      nextDue,
+      nextDue: dueToSave,
       notes: notes.trim() || undefined,
       remind,
       paused,
+      history: isNew && doneBefore ? [{ date: lastDoneDate }] : undefined,
     });
     toast(t('task.saved'));
     navigate(`/item/${item.id}`, { replace: isNew });
@@ -141,19 +153,63 @@ export function TaskPage() {
           />
         </div>
         <IntervalInput every={every} unit={unit} onChange={changeInterval} />
-        <div className="field">
-          <label htmlFor={`${formId}-due`}>{t('task.nextDue')}</label>
-          <input
-            id={`${formId}-due`}
-            type="date"
-            value={nextDue}
-            required
-            onChange={(e) => {
-              setNextDue(e.target.value);
-              setDueTouched(true);
-            }}
-          />
-        </div>
+        {isNew ? (
+          <fieldset className="field start-choice">
+            <legend>{t('task.startQuestion')}</legend>
+            <label className="check-row">
+              <input type="radio" name={`${formId}-start`} checked={!doneBefore} onChange={() => setDoneBefore(false)} />
+              <span className="check-label">{t('task.notYet')}</span>
+            </label>
+            {!doneBefore && (
+              <div className="field nested">
+                <label htmlFor={`${formId}-startdate`}>{t('task.startFrom')}</label>
+                <input
+                  id={`${formId}-startdate`}
+                  type="date"
+                  value={startDate}
+                  required
+                  aria-describedby={`${formId}-starthint`}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+                <p id={`${formId}-starthint`} className="hint">
+                  {t('task.startFromHint')}
+                </p>
+              </div>
+            )}
+            <label className="check-row">
+              <input type="radio" name={`${formId}-start`} checked={doneBefore} onChange={() => setDoneBefore(true)} />
+              <span className="check-label">{t('task.yesBefore')}</span>
+            </label>
+            {doneBefore && (
+              <div className="field nested">
+                <label htmlFor={`${formId}-lastdone`}>{t('task.lastDoneOn')}</label>
+                <input
+                  id={`${formId}-lastdone`}
+                  type="date"
+                  value={lastDoneDate}
+                  max={today}
+                  required
+                  aria-invalid={lastDoneDate > today || undefined}
+                  onChange={(e) => setLastDoneDate(e.target.value)}
+                />
+              </div>
+            )}
+            <p className="will-be-due" aria-live="polite">
+              {newDue && t('task.willBeDue', { date: formatDate(newDue, 'long') })}
+            </p>
+          </fieldset>
+        ) : (
+          <div className="field">
+            <label htmlFor={`${formId}-due`}>{t('task.nextDue')}</label>
+            <input
+              id={`${formId}-due`}
+              type="date"
+              value={nextDue}
+              required
+              onChange={(e) => setNextDue(e.target.value)}
+            />
+          </div>
+        )}
         <div className="field">
           <label htmlFor={`${formId}-notes`}>
             {t('notes')} <span className="muted">{t('optional')}</span>

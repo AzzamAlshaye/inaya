@@ -5,14 +5,21 @@ import { addInterval } from '../lib/dates';
 import { uid } from '../lib/id';
 import { DEFAULT_PRESETS } from '../data/presets';
 
+/** A task being created, optionally with past completions. */
+export type NewTask = Omit<Task, 'id' | 'itemId' | 'history'> & { history?: Omit<LogEntry, 'id'>[] };
+
+const withIds = (entries: Omit<LogEntry, 'id'>[] = []): LogEntry[] =>
+  entries.map((h) => ({ ...h, id: uid() })).sort((a, b) => b.date.localeCompare(a.date));
+
 export interface Store {
   data: AppData;
   /** Replace state; returns the previous snapshot so callers can offer Undo. */
   restore: (snapshot: AppData) => void;
-  addItem: (item: Omit<Item, 'id' | 'createdAt'>, tasks: Omit<Task, 'id' | 'itemId' | 'history'>[]) => Item;
+  addItem: (item: Omit<Item, 'id' | 'createdAt'>, tasks: NewTask[]) => Item;
   updateItem: (id: string, patch: Partial<Item>) => void;
   deleteItem: (id: string) => AppData;
-  saveTask: (task: Omit<Task, 'id' | 'history'> & { id?: string }) => Task;
+  /** Create or update a task. `history` is only used when creating (e.g. a past "last done" date). */
+  saveTask: (task: Omit<Task, 'id' | 'history'> & { id?: string; history?: Omit<LogEntry, 'id'>[] }) => Task;
   deleteTask: (id: string) => AppData;
   markDone: (taskId: string, entry: Omit<LogEntry, 'id'>) => { previous: AppData; task: Task };
   deleteLogEntry: (taskId: string, entryId: string) => AppData;
@@ -60,7 +67,7 @@ export function StoreProvider({ children, fallback }: { children: ReactNode; fal
         update((d) => ({
           ...d,
           items: [...d.items, item],
-          tasks: [...d.tasks, ...tasks.map((t) => ({ ...t, id: uid(), itemId: item.id, history: [] }))],
+          tasks: [...d.tasks, ...tasks.map((t) => ({ ...t, id: uid(), itemId: item.id, history: withIds(t.history) }))],
         }));
         return item;
       },
@@ -73,10 +80,11 @@ export function StoreProvider({ children, fallback }: { children: ReactNode; fal
           tasks: d.tasks.filter((t) => t.itemId !== id),
         })),
       saveTask: (input) => {
-        const existing = input.id ? dataRef.current!.tasks.find((t) => t.id === input.id) : undefined;
+        const { history: initialHistory, ...fields } = input;
+        const existing = fields.id ? dataRef.current!.tasks.find((t) => t.id === fields.id) : undefined;
         const task: Task = existing
-          ? { ...existing, ...input, id: existing.id }
-          : { ...input, id: uid(), history: [] };
+          ? { ...existing, ...fields, id: existing.id }
+          : { ...fields, id: uid(), history: withIds(initialHistory) };
         update((d) => ({
           ...d,
           tasks: existing ? d.tasks.map((t) => (t.id === task.id ? task : t)) : [...d.tasks, task],

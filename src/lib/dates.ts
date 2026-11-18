@@ -42,6 +42,14 @@ export function addInterval(iso: string, every: number, unit: IntervalUnit): str
   return toISODate(d);
 }
 
+/**
+ * First due date for a new task: one interval after it was last done, or —
+ * if it has never been done — one interval after the start date.
+ */
+export function firstDue(every: number, unit: IntervalUnit, start: string, lastDoneOn?: string): string {
+  return addInterval(lastDoneOn || start, every, unit);
+}
+
 /** Whole days from `from` to `to` (positive when `to` is later). */
 export function daysBetween(from: string, to: string): number {
   const ms = parseISODate(to).getTime() - parseISODate(from).getTime();

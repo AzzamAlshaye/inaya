@@ -134,7 +134,7 @@ test.describe('Keyboard & screen reader behaviour', () => {
     await page.getByRole('radio', { name: 'Car' }).focus();
     await page.keyboard.press('ArrowRight');
     await expect(page.getByRole('radio', { name: 'Garden' })).toBeChecked();
-    await expect(page.getByRole('checkbox', { name: /Watering/ })).toBeVisible();
+    await expect(page.getByRole('checkbox', { name: 'Watering', exact: true })).toBeVisible();
   });
 
   test('toast messages are announced via a live region', async ({ page }) => {

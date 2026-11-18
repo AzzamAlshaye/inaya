@@ -29,6 +29,8 @@ export interface Item {
   icon: string;
   color: string;
   notes?: string;
+  /** When tracking starts (YYYY-MM-DD); may be in the past or the future. */
+  startDate?: string;
   createdAt: string;
 }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addInterval, daysBetween, taskStatus } from './dates';
+import { addInterval, daysBetween, firstDue, taskStatus } from './dates';
 import type { Task } from '../types';
 
 const task = (nextDue: string, extra: Partial<Task> = {}): Task => ({
@@ -44,5 +44,15 @@ describe('taskStatus', () => {
     expect(taskStatus(task('2026-06-22'), 7, today)).toBe('soon');
     expect(taskStatus(task('2026-06-23'), 7, today)).toBe('ok');
     expect(taskStatus(task('2026-06-01', { paused: true }), 7, today)).toBe('paused');
+  });
+});
+
+describe('firstDue', () => {
+  it('is one interval after the start date when never done', () => {
+    expect(firstDue(6, 'month', '2025-01-01')).toBe('2025-07-01');
+    expect(firstDue(2, 'day', '2026-09-01')).toBe('2026-09-03');
+  });
+  it('is one interval after the last-done date when done before', () => {
+    expect(firstDue(6, 'month', '2025-01-01', '2026-05-01')).toBe('2026-11-01');
   });
 });

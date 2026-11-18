@@ -14,7 +14,7 @@ export async function addItem(page: Page, presetName: RegExp | string, name: str
   await page.goto('./#/add');
   await page.getByRole('radio', { name: presetName }).check({ force: true });
   await page.getByRole('textbox').first().fill(name);
-  for (const task of uncheck) await page.getByRole('checkbox', { name: new RegExp(task) }).uncheck();
+  for (const task of uncheck) await page.getByRole('checkbox', { name: task, exact: true }).uncheck();
   await page.getByRole('button', { name: /^(Create|إنشاء)$/ }).click();
   await expect(page.locator('h1')).toHaveText(name);
 }

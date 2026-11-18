@@ -2,7 +2,7 @@ import { useId, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useI18n } from '../i18n';
 import { useStore } from '../state/store';
-import { addInterval, todayISO } from '../lib/dates';
+import { firstDue, todayISO } from '../lib/dates';
 import { PageHeader } from '../components/Layout';
 import { ColorPicker, IconPicker } from '../components/Pickers';
 import { useToast } from '../components/Toast';
@@ -11,7 +11,7 @@ import { Icon } from '../components/Icon';
 /** Create a new item from a preset. */
 export function AddItemPage() {
   const i18n = useI18n();
-  const { t, presetName, taskTitle, formatInterval } = i18n;
+  const { t, presetName, taskTitle, formatInterval, formatDate } = i18n;
   const store = useStore();
   const navigate = useNavigate();
   const toast = useToast();
@@ -24,6 +24,18 @@ export function AddItemPage() {
   const [name, setName] = useState('');
   const [selected, setSelected] = useState<Set<string>>(() => new Set(preset?.tasks.map((x) => x.id)));
   const [error, setError] = useState(false);
+  const today = todayISO();
+  const [startDate, setStartDate] = useState(today);
+  /** Preset task id → last-done date, for tasks ticked "Done before". */
+  const [lastDone, setLastDone] = useState<Record<string, string>>({});
+
+  const setDoneBefore = (id: string, on: boolean) =>
+    setLastDone((m) => {
+      const next = { ...m };
+      if (on) next[id] = startDate < today ? startDate : today;
+      else delete next[id];
+      return next;
+    });
 
   const choosePreset = (id: string) => {
     setPresetId(id);
@@ -50,24 +62,30 @@ export function AddItemPage() {
       document.getElementById(`${formId}-name`)?.focus();
       return;
     }
-    const today = todayISO();
+    const start = startDate || today;
     const item = store.addItem(
       {
         name: finalName,
         presetId: preset?.id,
         icon: preset?.icon ?? '⭐',
         color: preset?.color ?? '#64748b',
+        startDate: start,
       },
       (preset?.tasks ?? [])
         .filter((pt) => selected.has(pt.id))
-        .map((pt) => ({
-          titleKey: pt.title ? undefined : pt.titleKey,
-          title: pt.title,
-          every: pt.every,
-          unit: pt.unit,
-          nextDue: addInterval(today, pt.every, pt.unit),
-          remind: true,
-        })),
+        .map((pt) => {
+          // A "last done" date can never be in the future.
+          const done = lastDone[pt.id] ? (lastDone[pt.id] > today ? today : lastDone[pt.id]) : undefined;
+          return {
+            titleKey: pt.title ? undefined : pt.titleKey,
+            title: pt.title,
+            every: pt.every,
+            unit: pt.unit,
+            nextDue: firstDue(pt.every, pt.unit, start, done),
+            remind: true,
+            history: done ? [{ date: done }] : [],
+          };
+        }),
     );
     toast(t('item.created', { name: item.name }));
     navigate(`/item/${item.id}`, { replace: true });
@@ -127,6 +145,22 @@ export function AddItemPage() {
           )}
         </div>
 
+        <div className="field">
+          <label htmlFor={`${formId}-start`} className="step-title">
+            {t('item.startTitle')}
+          </label>
+          <input
+            id={`${formId}-start`}
+            type="date"
+            value={startDate}
+            aria-describedby={`${formId}-start-hint`}
+            onChange={(e) => setStartDate(e.target.value)}
+          />
+          <p id={`${formId}-start-hint`} className="hint">
+            {t('item.startHint')}
+          </p>
+        </div>
+
         {preset && (
           <fieldset className="field">
             <legend className="step-title">{t('item.chooseTasks')}</legend>
@@ -144,17 +178,61 @@ export function AddItemPage() {
                   </button>
                 </div>
                 <ul className="check-list" role="list">
-                  {preset.tasks.map((pt) => (
-                    <li key={pt.id}>
-                      <label className="check-row">
-                        <input type="checkbox" checked={selected.has(pt.id)} onChange={() => toggle(pt.id)} />
-                        <span className="check-label">
-                          <span>{taskTitle(pt)}</span>
-                          <span className="muted">{formatInterval(pt.every, pt.unit)}</span>
-                        </span>
-                      </label>
-                    </li>
-                  ))}
+                  {preset.tasks.map((pt) => {
+                    const name = taskTitle(pt);
+                    const on = selected.has(pt.id);
+                    const done = lastDone[pt.id];
+                    const due = firstDue(pt.every, pt.unit, startDate || today, done);
+                    return (
+                      <li key={pt.id} className={`task-pick${on ? ' on' : ''}`}>
+                        <label className="check-row">
+                          <input
+                            type="checkbox"
+                            checked={on}
+                            onChange={() => toggle(pt.id)}
+                            aria-labelledby={`${formId}-${pt.id}-name`}
+                            aria-describedby={`${formId}-${pt.id}-info`}
+                          />
+                          <span className="check-label">
+                            <span id={`${formId}-${pt.id}-name`}>{name}</span>
+                            <span className="muted" id={`${formId}-${pt.id}-info`}>
+                              {formatInterval(pt.every, pt.unit)}
+                              {on && <> · {t('task.willBeDue', { date: formatDate(due) })}</>}
+                            </span>
+                          </span>
+                        </label>
+                        {on && (
+                          <div className="done-before">
+                            <label className="inline-check">
+                              <input
+                                type="checkbox"
+                                checked={done !== undefined}
+                                onChange={(e) => setDoneBefore(pt.id, e.target.checked)}
+                              />
+                              <span>
+                                {t('item.doneBefore')}
+                                <span className="visually-hidden">: {name}</span>
+                              </span>
+                            </label>
+                            {done !== undefined && (
+                              <label className="inline-date">
+                                <span>
+                                  {t('task.lastDoneOn')}
+                                  <span className="visually-hidden">: {name}</span>
+                                </span>
+                                <input
+                                  type="date"
+                                  value={done}
+                                  max={today}
+                                  onChange={(e) => setLastDone((m) => ({ ...m, [pt.id]: e.target.value }))}
+                                />
+                              </label>
+                            )}
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               </>
             )}
@@ -185,6 +263,7 @@ export function EditItemPage() {
   const [icon, setIcon] = useState(item?.icon ?? '⭐');
   const [color, setColor] = useState(item?.color ?? '#64748b');
   const [notes, setNotes] = useState(item?.notes ?? '');
+  const [startDate, setStartDate] = useState(item?.startDate ?? '');
   const [error, setError] = useState(false);
 
   if (!item) {
@@ -203,7 +282,7 @@ export function EditItemPage() {
       document.getElementById(`${formId}-name`)?.focus();
       return;
     }
-    store.updateItem(item.id, { name: name.trim(), icon, color, notes: notes.trim() || undefined });
+    store.updateItem(item.id, { name: name.trim(), icon, color, notes: notes.trim() || undefined, startDate: startDate || undefined });
     toast(t('task.saved'));
     navigate(-1);
   };
@@ -231,6 +310,10 @@ export function EditItemPage() {
               {t('required')}
             </p>
           )}
+        </div>
+        <div className="field">
+          <label htmlFor={`${formId}-start`}>{t('item.startDate')}</label>
+          <input id={`${formId}-start`} type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
         </div>
         <IconPicker value={icon} onChange={setIcon} />
         <ColorPicker value={color} onChange={setColor} />

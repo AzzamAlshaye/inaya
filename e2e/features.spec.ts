@@ -23,10 +23,11 @@ test.describe('Items & presets flow', () => {
   test('select none / select all toggles every task', async ({ page }) => {
     await openApp(page, '/add');
     await page.getByRole('radio', { name: 'Garden' }).check({ force: true });
+    const main = page.locator('.task-pick > .check-row input');
     await page.getByRole('button', { name: 'Select none' }).click();
-    await expect(page.getByRole('checkbox', { checked: true })).toHaveCount(0);
+    await expect(main.and(page.locator(':checked'))).toHaveCount(0);
     await page.getByRole('button', { name: 'Select all' }).click();
-    await expect(page.getByRole('checkbox', { checked: false })).toHaveCount(0);
+    await expect(main.and(page.locator(':not(:checked)'))).toHaveCount(0);
   });
 
   test('blank name falls back to the preset name', async ({ page }) => {
@@ -131,8 +132,8 @@ test.describe('Tasks', () => {
     await page.getByLabel('Task name').fill('Wiper blades');
     await page.getByLabel('Amount').fill('9');
     await page.getByLabel('Unit').selectOption('month');
-    // Suggested due date follows the interval until the user edits it.
-    await expect(page.getByLabel('Next due date')).toHaveValue('2027-03-15');
+    // Preview follows the interval (start = today).
+    await expect(page.getByText(/Will be due: .*March 15, 2027/)).toBeVisible();
     await page.getByRole('button', { name: 'Save' }).click();
     await expect(page.locator('.task-card', { hasText: 'Wiper blades' })).toContainText('Every 9 months');
   });
@@ -368,5 +369,116 @@ test.describe('Settings & data', () => {
     await expect(page.getByText('This item no longer exists.')).toBeVisible();
     await page.goto('./#/nope/nope');
     await expect(page.locator('h1')).toHaveText('My routines');
+  });
+});
+
+test.describe('Start dates & done before', () => {
+  test('past start date makes never-done tasks overdue', async ({ page }) => {
+    await openApp(page, '/add');
+    await page.getByRole('radio', { name: 'Car' }).check({ force: true });
+    await page.getByLabel(/When does tracking start/).fill('2025-01-01');
+    // Live preview per task: oil change every 6 months → July 1, 2025.
+    await expect(page.locator('.task-pick', { hasText: 'Oil & filter change' })).toContainText('Will be due: Jul 1, 2025');
+    await page.getByRole('button', { name: 'Create' }).click();
+    await expect(page.getByText('Tracking since Wed, January 1, 2025')).toBeVisible();
+    const card = page.locator('.task-card', { hasText: 'Oil & filter change' });
+    await expect(card.locator('.badge')).toHaveText('Overdue');
+    await expect(card).toContainText('Next due: Jul 1, 2025');
+  });
+
+  test('future start date: nothing is due yet', async ({ page }) => {
+    await openApp(page, '/add');
+    await page.getByRole('radio', { name: 'Garden' }).check({ force: true });
+    await page.getByLabel(/When does tracking start/).fill('2026-09-01');
+    await page.getByRole('button', { name: 'Create' }).click();
+    await expect(page.getByText('Starts on Tue, September 1, 2026')).toBeVisible();
+    await expect(page.locator('.task-card.status-overdue, .task-card.status-today, .task-card.status-soon')).toHaveCount(0);
+    await expect(page.locator('.task-card', { hasText: 'Watering' })).toContainText('Next due: Sep 3, 2026');
+  });
+
+  test('"done before" on a preset task sets last done and next due', async ({ page }) => {
+    await openApp(page, '/add');
+    await page.getByRole('radio', { name: 'Car' }).check({ force: true });
+    await page.getByRole('checkbox', { name: /^Done before\W+Oil & filter change$/ }).check();
+    const lastDone = page.getByLabel(/^Last done on\W+Oil & filter change$/);
+    await expect(lastDone).toHaveAttribute('max', '2026-06-15');
+    await lastDone.fill('2026-05-01');
+    await expect(page.locator('.task-pick', { hasText: 'Oil & filter change' })).toContainText('Will be due: Nov 1, 2026');
+    await page.getByRole('button', { name: 'Create' }).click();
+    const card = page.locator('.task-card', { hasText: 'Oil & filter change' });
+    await expect(card).toContainText('Last done: May 1, 2026');
+    await expect(card).toContainText('Next due: Nov 1, 2026');
+    // Untouched tasks are still "not done yet".
+    await expect(page.locator('.task-card', { hasText: 'Tire rotation' })).toContainText('Not done yet');
+    await card.getByRole('link', { name: 'Oil & filter change' }).click();
+    await expect(page.locator('.history-row')).toHaveCount(1);
+    await expect(page.locator('.history-date')).toHaveText('Fri, May 1, 2026');
+  });
+
+  test('unticking a task hides its "done before" option', async ({ page }) => {
+    await openApp(page, '/add');
+    await page.getByRole('radio', { name: 'Car' }).check({ force: true });
+    await expect(page.getByRole('checkbox', { name: /^Done before\W+Car wash$/ })).toBeVisible();
+    await page.getByRole('checkbox', { name: 'Car wash', exact: true }).uncheck();
+    await expect(page.getByRole('checkbox', { name: /^Done before\W+Car wash$/ })).toHaveCount(0);
+  });
+
+  test('new task: "not yet" with a future start, or "done before" with a past date', async ({ page }) => {
+    await openApp(page);
+    await addItem(page, 'Home', 'House');
+    await page.getByRole('link', { name: 'Add task' }).click();
+    await page.getByLabel('Task name').fill('Paint fence');
+    await page.getByLabel('Amount').fill('2');
+    await page.getByLabel('Unit').selectOption('year');
+    await expect(page.getByRole('radio', { name: /Not yet/ })).toBeChecked();
+    await page.getByLabel('Start date').fill('2026-08-01');
+    await expect(page.getByText(/Will be due: .*August 1, 2028/)).toBeVisible();
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expect(page.locator('.task-card', { hasText: 'Paint fence' })).toContainText('Next due: Aug 1, 2028');
+
+    await page.getByRole('link', { name: 'Add task' }).click();
+    await page.getByLabel('Task name').fill('Gutter cleaning');
+    await page.getByLabel('Amount').fill('6');
+    await page.getByRole('radio', { name: /Yes/ }).check();
+    await expect(page.getByLabel('Last done on')).toHaveAttribute('max', '2026-06-15');
+    await page.getByLabel('Last done on').fill('2025-10-20');
+    await expect(page.getByText(/Will be due: .*April 20, 2026/)).toBeVisible();
+    await page.getByRole('button', { name: 'Save' }).click();
+    const card = page.locator('.task-card', { hasText: 'Gutter cleaning' });
+    await expect(card.locator('.badge')).toHaveText('Overdue');
+    await expect(card).toContainText('Last done: Oct 20, 2025');
+  });
+
+  test('new task rejects a "last done" date in the future', async ({ page }) => {
+    await openApp(page);
+    await addItem(page, 'Home', 'House');
+    await page.getByRole('link', { name: 'Add task' }).click();
+    await page.getByLabel('Task name').fill('X');
+    await page.getByRole('radio', { name: /Yes/ }).check();
+    await page.getByLabel('Last done on').fill('2026-12-01');
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByRole('alert')).toBeVisible();
+    await expect(page.locator('h1')).toHaveText('New task');
+  });
+
+  test('start date can be edited later', async ({ page }) => {
+    await openApp(page);
+    await addItem(page, 'Pet', 'Luna');
+    await expect(page.getByText('Tracking since Mon, June 15, 2026')).toBeVisible();
+    await page.getByRole('link', { name: 'Edit' }).click();
+    await page.getByLabel('Start date').fill('2024-03-10');
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByText('Tracking since Sun, March 10, 2024')).toBeVisible();
+  });
+});
+
+test.describe('Start dates in Arabic', () => {
+  test.use({ locale: 'ar-SA' });
+  test('labels and preview are translated', async ({ page }) => {
+    await openApp(page, '/add');
+    await expect(page.getByText('3. متى تبدأ المتابعة؟')).toBeVisible();
+    await page.getByRole('checkbox', { name: /^نُفّذت سابقًا\W+تغيير الزيت والفلتر$/ }).check();
+    await expect(page.getByLabel(/^آخر تنفيذ في\W+تغيير الزيت والفلتر$/)).toBeVisible();
+    await expect(page.locator('.task-pick', { hasText: 'تغيير الزيت والفلتر' })).toContainText('ستستحق في');
   });
 });

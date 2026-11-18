@@ -1,7 +1,7 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useI18n } from '../i18n';
 import { useStore } from '../state/store';
-import { compareTasks } from '../lib/dates';
+import { compareTasks, todayISO } from '../lib/dates';
 import { PageHeader } from '../components/Layout';
 import { TaskCard } from '../components/TaskCard';
 import { Icon } from '../components/Icon';
@@ -9,7 +9,7 @@ import { useConfirm } from '../components/Dialog';
 import { useToast } from '../components/Toast';
 
 export function ItemPage() {
-  const { t } = useI18n();
+  const { t, formatDate } = useI18n();
   const { itemId } = useParams();
   const store = useStore();
   const navigate = useNavigate();
@@ -57,6 +57,11 @@ export function ItemPage() {
           </>
         }
       />
+      {item.startDate && (
+        <p className="item-since">
+          {t(item.startDate > todayISO() ? 'item.startsOn' : 'item.since', { date: formatDate(item.startDate, 'long') })}
+        </p>
+      )}
       {item.notes && <p className="item-notes">{item.notes}</p>}
 
       <section className="section" aria-labelledby="tasks-heading">
