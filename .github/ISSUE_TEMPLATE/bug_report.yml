@@ -1,0 +1,40 @@
+name: Bug report / بلاغ عن خطأ
+description: Something in Inaya is not working right
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened? / ماذا حدث؟
+      placeholder: e.g. I marked "Oil change" done and the next due date did not change
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce / خطوات تكرار المشكلة
+      placeholder: |
+        1. Open the car
+        2. Tap "Mark done" on Oil change
+        3. ...
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect? / ماذا كنت تتوقع؟
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where? / أين؟
+      options: [Android app, Website, Both]
+    validations:
+      required: true
+  - type: dropdown
+    id: lang
+    attributes:
+      label: App language / لغة التطبيق
+      options: [Arabic / العربية, English]
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots / لقطات الشاشة
+      description: Drag images here if you have them.
