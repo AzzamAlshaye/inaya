@@ -60,12 +60,15 @@ export function PageHeader({
   actions,
   icon,
   color,
+  themeToggle = false,
 }: {
   title: string;
   back?: string | boolean;
   actions?: ReactNode;
   icon?: string;
   color?: string;
+  /** Show the light/dark switch (Home has its own; Settings shows it here). */
+  themeToggle?: boolean;
 }) {
   const { t } = useI18n();
   const navigate = useNavigate();
@@ -87,10 +90,12 @@ export function PageHeader({
         </span>
       )}
       <h1>{title}</h1>
-      <div className="header-actions">
-        {actions}
-        <ThemeToggle />
-      </div>
+      {(actions || themeToggle) && (
+        <div className="header-actions">
+          {actions}
+          {themeToggle && <ThemeToggle />}
+        </div>
+      )}
     </header>
   );
 }

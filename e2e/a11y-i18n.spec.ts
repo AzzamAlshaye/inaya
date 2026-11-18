@@ -27,6 +27,8 @@ for (const [locale, lang] of [['en-US', 'en'], ['ar-SA', 'ar']] as const) {
         for (const path of [...pages, itemUrl, taskUrl]) {
           await page.goto(`./#${path}`);
           await expect(page.locator('h1')).toBeVisible();
+          // Measure the settled UI, not cards mid fade-in.
+          await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running'));
           const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
           const summary = results.violations.map(
             (v) => `${path} ${v.id}: ${v.help} → ${v.nodes.map((n) => n.target.join(' ')).slice(0, 3).join(', ')}`,
@@ -134,7 +136,11 @@ test.describe('Keyboard & screen reader behaviour', () => {
     await page.getByRole('radio', { name: 'Car' }).focus();
     await page.keyboard.press('ArrowRight');
     await expect(page.getByRole('radio', { name: 'Garden' })).toBeChecked();
-    await expect(page.getByRole('checkbox', { name: 'Watering', exact: true })).toBeVisible();
+    await expect(page.locator('.suggest-row', { hasText: 'Watering' })).toBeVisible();
+    // Suggestions are real checkboxes: focusable and toggled with Space.
+    await page.locator('.suggest-list input[type=checkbox]').first().focus();
+    await page.keyboard.press('Space');
+    await expect(page.getByText(/Tasks to add: 1/)).toBeVisible();
   });
 
   test('toast messages are announced via a live region', async ({ page }) => {

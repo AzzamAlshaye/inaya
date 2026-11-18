@@ -14,7 +14,9 @@ export async function addItem(page: Page, presetName: RegExp | string, name: str
   await page.goto('./#/add');
   await page.getByRole('radio', { name: presetName }).check({ force: true });
   await page.getByRole('textbox').first().fill(name);
-  for (const task of uncheck) await page.getByRole('checkbox', { name: task, exact: true }).uncheck();
+  // Suggestions are opt-in: add them all, then remove the ones not wanted.
+  await addAllSuggestions(page);
+  for (const task of uncheck) await page.getByRole('checkbox', { name: task, exact: true }).uncheck({ force: true });
   await page.getByRole('button', { name: /^(Create|إنشاء)$/ }).click();
   await expect(page.locator('h1')).toHaveText(name);
 }
@@ -24,4 +26,10 @@ export async function setDue(page: Page, taskName: string, iso: string) {
   await page.getByRole('link', { name: taskName, exact: true }).click();
   await page.getByLabel(/Next due date|الموعد القادم/).fill(iso);
   await page.getByRole('button', { name: /^(Save|حفظ)$/ }).click();
+}
+
+/** Tap "Add all" in the suggestions list of the add flow (if the preset has any). */
+export async function addAllSuggestions(page: Page) {
+  const addAll = page.getByRole('button', { name: /^(Add all|إضافة الكل)$/ });
+  if (await addAll.count()) await addAll.click();
 }

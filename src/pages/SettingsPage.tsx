@@ -61,7 +61,7 @@ export function SettingsPage() {
 
   return (
     <>
-      <PageHeader title={t('settings.title')} />
+      <PageHeader title={t('settings.title')} themeToggle />
       <div className="form page-form">
         <RadioGroup<LanguageSetting>
           legend={t('settings.language')}

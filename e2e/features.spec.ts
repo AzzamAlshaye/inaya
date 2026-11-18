@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { addItem, openApp, setDue } from './helpers';
+import { addAllSuggestions, addItem, openApp, setDue } from './helpers';
 
 test.use({ locale: 'en-US' });
 
@@ -20,14 +20,74 @@ test.describe('Items & presets flow', () => {
     await expect(page.getByRole('link', { name: 'Car wash' })).toHaveCount(0);
   });
 
-  test('select none / select all toggles every task', async ({ page }) => {
+  test('suggestions are opt-in: nothing is added unless chosen', async ({ page }) => {
     await openApp(page, '/add');
     await page.getByRole('radio', { name: 'Garden' }).check({ force: true });
-    const main = page.locator('.task-pick > .check-row input');
-    await page.getByRole('button', { name: 'Select none' }).click();
+    const main = page.locator('.suggest-row input[type=checkbox]');
     await expect(main.and(page.locator(':checked'))).toHaveCount(0);
-    await page.getByRole('button', { name: 'Select all' }).click();
+    await expect(page.getByText('Tasks to add: 0')).toBeVisible();
+    await page.locator('.suggest-row', { hasText: 'Watering' }).click();
+    await expect(page.getByText('Tasks to add: 1')).toBeVisible();
+    await page.getByRole('button', { name: 'Add all' }).click();
     await expect(main.and(page.locator(':not(:checked)'))).toHaveCount(0);
+    await page.getByRole('button', { name: 'Remove all' }).click();
+    await expect(main.and(page.locator(':checked'))).toHaveCount(0);
+    // Creating with nothing chosen gives an empty item with suggestions offered.
+    await page.getByRole('button', { name: 'Create' }).click();
+    await expect(page.getByText('No tasks yet')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Suggested tasks' })).toBeVisible();
+  });
+
+  test('add your own task in the add flow, and remove it again', async ({ page }) => {
+    await openApp(page, '/add');
+    await page.getByRole('radio', { name: 'Car' }).check({ force: true });
+    const own = page.locator('.own-task');
+    await own.getByLabel('Task name').fill('Wiper blades');
+    await own.getByLabel('Amount').fill('9');
+    await own.getByRole('button', { name: 'Add this task' }).click();
+    await own.getByLabel('Task name').fill('Tint check');
+    await own.getByLabel('Task name').press('Enter');
+    await expect(page.getByText('Tasks to add: 2')).toBeVisible();
+    await page.getByRole('button', { name: 'Remove Tint check' }).click();
+    await own.getByRole('button', { name: 'Add this task' }).click();
+    await expect(own.getByRole('alert')).toBeVisible();
+    await page.getByRole('button', { name: 'Create' }).click();
+    await expect(page.locator('.task-card')).toHaveCount(1);
+    await expect(page.locator('.task-card', { hasText: 'Wiper blades' })).toContainText('Every 9 months');
+  });
+
+  test('suggestions on the item screen add a task with one tap', async ({ page }) => {
+    await openApp(page);
+    await addItem(page, 'Pet', 'Luna', ['Grooming', 'Vaccinations']);
+    const section = page.locator('.suggestions');
+    await expect(section.locator('.suggest-row')).toHaveCount(2);
+    await section.getByRole('button', { name: /^Add\W+Grooming$/ }).click();
+    await expect(page.getByRole('status')).toContainText('“Grooming” added');
+    await expect(page.locator('.task-card', { hasText: 'Grooming' })).toContainText('Next due: Jul 15, 2026');
+    await expect(section.locator('.suggest-row')).toHaveCount(1);
+    await section.getByRole('button', { name: /^Add\W+Vaccinations$/ }).click();
+    await expect(page.locator('.suggestions')).toHaveCount(0);
+  });
+
+  test('long suggestion lists show 4 first, then "Show all"', async ({ page }) => {
+    await openApp(page, '/add');
+    await page.getByRole('radio', { name: 'Car' }).check({ force: true });
+    await page.locator('.suggest-row', { hasText: 'Car wash' }).click();
+    await page.getByRole('button', { name: 'Create' }).click();
+    const rows = page.locator('.suggestions .suggest-row');
+    await expect(rows).toHaveCount(4);
+    await page.getByRole('button', { name: 'Show all suggestions (11)' }).click();
+    await expect(rows).toHaveCount(11);
+  });
+
+  test('the field being typed in is scrolled into view', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 500 });
+    await openApp(page, '/add');
+    await page.getByRole('radio', { name: 'Car' }).check({ force: true });
+    await page.evaluate(() => window.scrollTo(0, 0));
+    const field = page.locator('.own-task').getByLabel('Task name');
+    await field.focus();
+    await expect(field).toBeInViewport({ ratio: 1 });
   });
 
   test('blank name falls back to the preset name', async ({ page }) => {
@@ -376,6 +436,7 @@ test.describe('Start dates & done before', () => {
   test('past start date makes never-done tasks overdue', async ({ page }) => {
     await openApp(page, '/add');
     await page.getByRole('radio', { name: 'Car' }).check({ force: true });
+    await addAllSuggestions(page);
     await page.getByLabel(/When does tracking start/).fill('2025-01-01');
     // Live preview per task: oil change every 6 months → July 1, 2025.
     await expect(page.locator('.task-pick', { hasText: 'Oil & filter change' })).toContainText('Will be due: Jul 1, 2025');
@@ -389,6 +450,7 @@ test.describe('Start dates & done before', () => {
   test('future start date: nothing is due yet', async ({ page }) => {
     await openApp(page, '/add');
     await page.getByRole('radio', { name: 'Garden' }).check({ force: true });
+    await addAllSuggestions(page);
     await page.getByLabel(/When does tracking start/).fill('2026-09-01');
     await page.getByRole('button', { name: 'Create' }).click();
     await expect(page.getByText('Starts on Tue, September 1, 2026')).toBeVisible();
@@ -399,6 +461,7 @@ test.describe('Start dates & done before', () => {
   test('"done before" on a preset task sets last done and next due', async ({ page }) => {
     await openApp(page, '/add');
     await page.getByRole('radio', { name: 'Car' }).check({ force: true });
+    await addAllSuggestions(page);
     await page.getByRole('checkbox', { name: /^Done before\W+Oil & filter change$/ }).check();
     const lastDone = page.getByLabel(/^Last done on\W+Oil & filter change$/);
     await expect(lastDone).toHaveAttribute('max', '2026-06-15');
@@ -418,8 +481,9 @@ test.describe('Start dates & done before', () => {
   test('unticking a task hides its "done before" option', async ({ page }) => {
     await openApp(page, '/add');
     await page.getByRole('radio', { name: 'Car' }).check({ force: true });
+    await addAllSuggestions(page);
     await expect(page.getByRole('checkbox', { name: /^Done before\W+Car wash$/ })).toBeVisible();
-    await page.getByRole('checkbox', { name: 'Car wash', exact: true }).uncheck();
+    await page.locator('.suggest-row', { hasText: 'Car wash' }).click();
     await expect(page.getByRole('checkbox', { name: /^Done before\W+Car wash$/ })).toHaveCount(0);
   });
 
@@ -477,6 +541,7 @@ test.describe('Start dates in Arabic', () => {
   test('labels and preview are translated', async ({ page }) => {
     await openApp(page, '/add');
     await expect(page.getByText('3. متى تبدأ المتابعة؟')).toBeVisible();
+    await addAllSuggestions(page);
     await page.getByRole('checkbox', { name: /^نُفّذت سابقًا\W+تغيير الزيت والفلتر$/ }).check();
     await expect(page.getByLabel(/^آخر تنفيذ في\W+تغيير الزيت والفلتر$/)).toBeVisible();
     await expect(page.locator('.task-pick', { hasText: 'تغيير الزيت والفلتر' })).toContainText('ستستحق في');

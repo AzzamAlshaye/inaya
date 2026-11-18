@@ -21,7 +21,7 @@ It works as a **website** and as an **Android app** (built with React + Capacito
 
 ## Features · المزايا
 
-- **Presets** for Car, Garden, Home, Health, Pet, Bills, plus an empty Custom preset. Choosing *Car* gives you oil change, tire rotation, brakes, filters, battery, registration, insurance and more; *Garden* gives you watering, fertilizing, soil care, pruning, weeding, etc.
+- **Presets as suggestions** for Car, Garden, Home, Health, Pet, Bills, plus an empty Custom preset. Choosing *Car* *suggests* oil change, tire rotation, brakes, filters, battery, registration, insurance and more — nothing is added until you tap it (or *Add all*). Add your own tasks right in the same screen, and the item page keeps offering the suggestions you haven't added yet.
 - **Fully customizable:** rename things, change icons and colors, add/remove/edit tasks and their intervals (days, weeks, months, years). The presets themselves can be edited, and you can create your own.
 - **Start dates, past or future:** when adding something, set when tracking starts (e.g. the day you bought the car, or next month for a new garden) and tick **Done before** on any task to enter when it was last done. New tasks ask *"Has this been done before?"* — *Not yet, start from a date* or *Yes, last done on…* — and preview the next due date.
 - **One-tap "Mark done"** with optional date, note (e.g. odometer reading) and cost. The next due date is calculated automatically. Every action can be undone.
