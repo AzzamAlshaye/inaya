@@ -10,7 +10,7 @@ async function seed(page: Page, lang: 'en' | 'ar') {
   await setDue(page, lang === 'ar' ? 'فحص البطارية' : 'Battery check', '2026-06-18');
 }
 
-const pages = ['/', '/add', '/presets', '/presets/garden', '/settings'];
+const pages = ['/', '/add', '/presets', '/presets/garden', '/settings', '/transfer'];
 
 for (const [locale, lang] of [['en-US', 'en'], ['ar-SA', 'ar']] as const) {
   for (const scheme of ['light', 'dark'] as const) {

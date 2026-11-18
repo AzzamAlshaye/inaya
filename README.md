@@ -27,6 +27,7 @@ It works as a **website** and as an **Android app** (built with React + Capacito
 - **Home dashboard** shows what is overdue, due today and due soon across everything you track.
 - **History and total cost** for each task.
 - **Reminders** (Android): a notification on the day a task is due, plus a daily nudge when something is overdue. You choose the time.
+- **Move to another phone by QR code:** Settings → *Move to another phone*. One phone shows a QR code (large data is split into a few codes that cycle automatically) and the other scans it with the camera. You can also copy/share a text code (e.g. over WhatsApp) and paste it on the other phone. Nothing is uploaded: the data travels inside the code.
 - **Backup:** export/import all data as a JSON file. Data stays on the device; there are no accounts and no servers.
 - **Arabic & English:** automatic from the device language, can be changed in Settings. Full right-to-left layout.
 
@@ -52,6 +53,10 @@ npm run dev          # web dev server
 
 ```bash
 npm test             # unit tests
+```
+
+```bash
+npm run e2e          # end-to-end, accessibility (axe), RTL and QR camera tests
 ```
 
 ```bash

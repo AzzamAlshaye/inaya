@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
 import { HashRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import { App as CapApp } from '@capacitor/app';
 import { Device } from '@capacitor/device';
@@ -14,6 +14,8 @@ import { ItemPage } from './pages/ItemPage';
 import { TaskPage } from './pages/TaskPage';
 import { PresetEditPage, PresetsPage } from './pages/PresetsPage';
 import { SettingsPage } from './pages/SettingsPage';
+// QR libraries are only needed on this screen, so load it on demand.
+const TransferPage = lazy(() => import('./pages/TransferPage').then((m) => ({ default: m.TransferPage })));
 import { isNative, syncNotifications } from './lib/notifications';
 
 function useDeviceLang(): Lang | null {
@@ -116,6 +118,14 @@ export default function App() {
                   <Route path="/presets" element={<PresetsPage />} />
                   <Route path="/presets/:presetId" element={<PresetEditPage />} />
                   <Route path="/settings" element={<SettingsPage />} />
+                  <Route
+                    path="/transfer"
+                    element={
+                      <Suspense fallback={<Loading />}>
+                        <TransferPage />
+                      </Suspense>
+                    }
+                  />
                   <Route path="*" element={<HomePage />} />
                 </Routes>
               </AppShell>

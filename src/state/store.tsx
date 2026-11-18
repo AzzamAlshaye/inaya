@@ -20,7 +20,7 @@ export interface Store {
   deletePreset: (id: string) => AppData;
   resetBuiltInPresets: () => void;
   updateSettings: (patch: Partial<Settings>) => void;
-  replaceAll: (data: AppData) => void;
+  replaceAll: (data: AppData) => AppData;
   eraseAll: () => void;
 }
 

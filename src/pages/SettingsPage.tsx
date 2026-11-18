@@ -1,4 +1,5 @@
 import { useId, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { LanguageSetting, ThemeSetting } from '../types';
 import { useI18n } from '../i18n';
 import { useStore } from '../state/store';
@@ -161,6 +162,10 @@ export function SettingsPage() {
 
         <h2>{t('settings.data')}</h2>
         <div className="button-stack">
+          <Link to="/transfer" className="btn btn-primary">
+            <Icon name="qr" />
+            {t('settings.transfer')}
+          </Link>
           <button
             type="button"
             className="btn btn-secondary"
