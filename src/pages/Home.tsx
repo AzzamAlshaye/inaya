@@ -1,0 +1,119 @@
+import { Link } from 'react-router-dom';
+import { useI18n } from '../i18n';
+import { useStore } from '../state/store';
+import { compareTasks, taskStatus } from '../lib/dates';
+import { PageHeader } from '../components/Layout';
+import { TaskCard } from '../components/TaskCard';
+import { Icon } from '../components/Icon';
+
+export function HomePage() {
+  const { t, formatNumber } = useI18n();
+  const { data } = useStore();
+  const { dueSoonDays } = data.settings;
+  const itemsById = new Map(data.items.map((i) => [i.id, i]));
+  const tasks = data.tasks.filter((task) => itemsById.has(task.itemId));
+
+  const attention = tasks
+    .filter((task) => ['overdue', 'today', 'soon'].includes(taskStatus(task, dueSoonDays)))
+    .sort((a, b) => compareTasks(a, b, dueSoonDays));
+
+  if (data.items.length === 0) {
+    return (
+      <>
+        <PageHeader title={t('home.title')} />
+        <section className="empty-state">
+          <div className="empty-icons" aria-hidden="true">🚗 🌱 🏠</div>
+          <h2>{t('home.emptyTitle')}</h2>
+          <p>{t('home.emptyBody')}</p>
+          <Link to="/add" className="btn btn-primary btn-large">
+            <Icon name="plus" />
+            {t('home.addThing')}
+          </Link>
+        </section>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <PageHeader
+        title={t('home.title')}
+        actions={
+          <Link to="/add" className="btn btn-primary">
+            <Icon name="plus" />
+            <span>{t('add')}</span>
+          </Link>
+        }
+      />
+
+      <section aria-labelledby="attention-heading" className="section">
+        <h2 id="attention-heading">
+          {t('home.needsAttention')}
+          {attention.length > 0 && <span className="count-pill">{formatNumber(attention.length)}</span>}
+        </h2>
+        {attention.length === 0 ? (
+          <p className="all-good">
+            <Icon name="check" />
+            {t('home.allGood', { n: dueSoonDays })}
+          </p>
+        ) : (
+          <ul className="task-list" role="list">
+            {attention.map((task) => (
+              <li key={task.id}>
+                <TaskCard task={task} item={itemsById.get(task.itemId)} showItem />
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section aria-labelledby="things-heading" className="section">
+        <h2 id="things-heading">{t('home.myThings')}</h2>
+        <ul className="item-grid" role="list">
+          {data.items.map((item) => {
+            const itemTasks = tasks.filter((task) => task.itemId === item.id);
+            const overdue = itemTasks.filter((task) => taskStatus(task, dueSoonDays) === 'overdue').length;
+            const soon = itemTasks.filter((task) => ['today', 'soon'].includes(taskStatus(task, dueSoonDays))).length;
+            return (
+              <li key={item.id}>
+                <Link
+                  to={`/item/${item.id}`}
+                  className="item-card"
+                  style={{ '--accent': item.color } as React.CSSProperties}
+                >
+                  <span className="item-icon" aria-hidden="true">
+                    {item.icon}
+                  </span>
+                  <span className="item-name">{item.name}</span>
+                  <span className="item-stats">
+                    <span>
+                      {t('home.taskCount')}: {formatNumber(itemTasks.length)}
+                    </span>
+                    {overdue > 0 && (
+                      <span className="stat-overdue">
+                        {t('home.overdueCount')}: {formatNumber(overdue)}
+                      </span>
+                    )}
+                    {soon > 0 && (
+                      <span className="stat-soon">
+                        {t('home.soonCount')}: {formatNumber(soon)}
+                      </span>
+                    )}
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+          <li>
+            <Link to="/add" className="item-card item-card-add">
+              <span className="item-icon" aria-hidden="true">
+                <Icon name="plus" size={32} />
+              </span>
+              <span className="item-name">{t('home.addThing')}</span>
+            </Link>
+          </li>
+        </ul>
+      </section>
+    </>
+  );
+}

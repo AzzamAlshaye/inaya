@@ -1,0 +1,20 @@
+import type { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  appId: 'com.routinetracker.app',
+  appName: 'Routine Tracker',
+  webDir: 'dist',
+  plugins: {
+    // Edge-to-edge: the web app pads itself with env(safe-area-inset-*).
+    SystemBars: {
+      insetsHandling: 'native',
+      initialViewportFitValueHint: 'cover',
+    },
+    LocalNotifications: {
+      smallIcon: 'ic_stat_notify',
+      iconColor: '#1d4ed8',
+    },
+  },
+};
+
+export default config;
