@@ -2,15 +2,22 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n';
 import { Icon } from './Icon';
+import { ThemeToggle } from './ThemeToggle';
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { t } = useI18n();
   const location = useLocation();
   const mainRef = useRef<HTMLElement>(null);
+  const firstRender = useRef(true);
 
   // Move focus to the new page's heading on navigation so screen readers announce it.
+  // Skipped on first load so keyboard users start at the skip link.
   useEffect(() => {
     window.scrollTo(0, 0);
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
     const h1 = mainRef.current?.querySelector('h1');
     if (h1) {
       h1.setAttribute('tabindex', '-1');
@@ -80,7 +87,10 @@ export function PageHeader({
         </span>
       )}
       <h1>{title}</h1>
-      {actions && <div className="header-actions">{actions}</div>}
+      <div className="header-actions">
+        {actions}
+        <ThemeToggle />
+      </div>
     </header>
   );
 }

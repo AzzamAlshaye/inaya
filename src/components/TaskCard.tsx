@@ -70,10 +70,12 @@ export function TaskCard({ task, item, showItem = false }: { task: Task; item?: 
           type="button"
           className="btn btn-done"
           onClick={() => setDoneOpen(true)}
-          aria-label={t('task.markDoneFor', { name: title })}
         >
           <Icon name="check" />
-          <span>{t('task.markDone')}</span>
+          <span>
+            {t('task.markDone')}
+            <span className="visually-hidden">: {title}</span>
+          </span>
         </button>
       )}
       {doneOpen && <MarkDoneDialog task={task} onClose={() => setDoneOpen(false)} />}

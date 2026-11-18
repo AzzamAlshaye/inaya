@@ -41,7 +41,10 @@ export function AddItemPage() {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    const finalName = name.trim() || (preset ? presetName(preset) : '');
+    // A blank name falls back to the preset name, except for the empty
+    // "Custom" preset where that name would be meaningless.
+    const fallback = preset && preset.tasks.length > 0 ? presetName(preset) : '';
+    const finalName = name.trim() || fallback;
     if (!finalName) {
       setError(true);
       document.getElementById(`${formId}-name`)?.focus();
@@ -108,7 +111,7 @@ export function AddItemPage() {
             id={`${formId}-name`}
             type="text"
             value={name}
-            placeholder={preset ? presetName(preset) : t('item.namePlaceholder')}
+            placeholder={preset && preset.tasks.length > 0 ? presetName(preset) : t('item.namePlaceholder')}
             aria-describedby={error ? `${formId}-name-err` : undefined}
             aria-invalid={error || undefined}
             onChange={(e) => {

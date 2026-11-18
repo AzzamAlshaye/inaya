@@ -18,9 +18,16 @@ export function Dialog({ open, title, onClose, children, footer }: DialogProps) 
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
-    if (open && !el.open) el.showModal();
-    if (!open && el.open) el.close();
+    if (!el || !open) return;
+    const opener = document.activeElement as HTMLElement | null;
+    if (!el.open) el.showModal();
+    return () => {
+      if (el.open) el.close();
+      // Defer so it runs after React finishes removing the dialog.
+      setTimeout(() => {
+        if (opener?.isConnected) opener.focus();
+      }, 0);
+    };
   }, [open]);
 
   return (

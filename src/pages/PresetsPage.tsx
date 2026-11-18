@@ -177,10 +177,10 @@ export function PresetEditPage() {
                   type="button"
                   className="btn btn-text danger"
                   onClick={() => setTasks((list) => list.filter((x) => x.id !== pt.id))}
-                  aria-label={t('presets.removeTask', { name: pt.text || String(idx + 1) })}
                 >
                   <Icon name="trash" />
                   {t('delete')}
+                  <span className="visually-hidden">: {pt.text || i18n.formatNumber(idx + 1)}</span>
                 </button>
               </li>
             ))}

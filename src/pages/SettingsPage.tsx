@@ -124,7 +124,7 @@ export function SettingsPage() {
         <label className="check-row">
           <input
             type="checkbox"
-            checked={settings.notifications}
+            checked={native && settings.notifications}
             disabled={!native}
             onChange={async (e) => {
               const on = e.target.checked;
