@@ -14,10 +14,10 @@ It works as a **website** and as an **Android app** (built with React + Capacito
 
 ## Get the app · تحميل التطبيق
 
-- **Website:** __PAGES_URL__
-- **Android APK:** open the [latest release](__REPO_URL__/releases/tag/latest), download `Inaya-debug.apk` on the phone and open it. Android will ask you to allow installing from this source the first time.
-- **الموقع:** __PAGES_URL__
-- **تطبيق أندرويد:** افتح [آخر إصدار](__REPO_URL__/releases/tag/latest) من الجوال، حمّل ملف `Inaya-debug.apk` وافتحه. سيطلب أندرويد السماح بالتثبيت من هذا المصدر في المرة الأولى.
+- **Website:** https://azzamalshaye.github.io/inaya/
+- **Android APK:** open the [latest release](https://github.com/AzzamAlshaye/inaya/releases/tag/latest), download `Inaya-debug.apk` on the phone and open it. Android will ask you to allow installing from this source the first time.
+- **الموقع:** https://azzamalshaye.github.io/inaya/
+- **تطبيق أندرويد:** افتح [آخر إصدار](https://github.com/AzzamAlshaye/inaya/releases/tag/latest) من الجوال، حمّل ملف `Inaya-debug.apk` وافتحه. سيطلب أندرويد السماح بالتثبيت من هذا المصدر في المرة الأولى.
 
 ## Features · المزايا
 
