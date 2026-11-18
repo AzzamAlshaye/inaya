@@ -72,16 +72,16 @@ jobs:
       - name: Collect outputs
         run: |
           mkdir -p out
-          cp android/app/build/outputs/apk/debug/app-debug.apk out/RoutineTracker-debug.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk out/Inaya-debug.apk
           if [ -f android/app/build/outputs/apk/release/app-release.apk ]; then
-            cp android/app/build/outputs/apk/release/app-release.apk out/RoutineTracker.apk
-            cp android/app/build/outputs/bundle/release/app-release.aab out/RoutineTracker.aab
+            cp android/app/build/outputs/apk/release/app-release.apk out/Inaya.apk
+            cp android/app/build/outputs/bundle/release/app-release.aab out/Inaya.aab
           fi
           ls -la out
 
       - uses: actions/upload-artifact@v4
         with:
-          name: RoutineTracker-android
+          name: Inaya-android
           path: out/*
 
       # Every push to main refreshes a "latest" pre-release so the newest APK
@@ -94,7 +94,7 @@ jobs:
           gh release delete latest --yes --cleanup-tag || true
           gh release create latest out/* \
             --title "Latest build (${VERSION_NAME})" \
-            --notes "Automatic build from the latest commit on main. Download **RoutineTracker-debug.apk** (or **RoutineTracker.apk** when signed) and open it on your Android phone to install." \
+            --notes "Automatic build from the latest commit on main. Download **Inaya-debug.apk** (or **Inaya.apk** when signed) and open it on your Android phone to install." \
             --prerelease --target "$GITHUB_SHA"
 
       - name: Publish tagged release

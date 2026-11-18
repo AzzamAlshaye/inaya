@@ -1,7 +1,7 @@
 import type { TranslationKey } from './en';
 
 export const ar: Record<TranslationKey, string> = {
-  appName: 'متابعة المهام',
+  appName: 'عناية',
   skipToContent: 'انتقل إلى المحتوى الرئيسي',
   'nav.home': 'الرئيسية',
   'nav.presets': 'القوالب',

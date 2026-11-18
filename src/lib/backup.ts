@@ -7,7 +7,7 @@ import { todayISO } from './dates';
 
 export async function exportBackup(data: AppData): Promise<void> {
   const json = JSON.stringify(data, null, 2);
-  const fileName = `routine-tracker-backup-${todayISO()}.json`;
+  const fileName = `inaya-backup-${todayISO()}.json`;
   if (isNative()) {
     const { uri } = await Filesystem.writeFile({
       path: fileName,

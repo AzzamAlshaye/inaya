@@ -2,7 +2,7 @@ import { Preferences } from '@capacitor/preferences';
 import type { AppData, Settings } from '../types';
 import { DEFAULT_PRESETS } from '../data/presets';
 
-const KEY = 'routine-tracker:data';
+const KEY = 'inaya:data';
 
 export const DEFAULT_SETTINGS: Settings = {
   language: 'auto',

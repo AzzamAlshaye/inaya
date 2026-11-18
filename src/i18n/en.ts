@@ -1,5 +1,5 @@
 export const en = {
-  appName: 'Routine Tracker',
+  appName: 'Inaya',
   skipToContent: 'Skip to main content',
   'nav.home': 'Home',
   'nav.presets': 'Presets',

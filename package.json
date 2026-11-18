@@ -1,5 +1,5 @@
 {
-  "name": "routine-tracker",
+  "name": "inaya",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -37,6 +37,6 @@
     "vite": "^8.3.6",
     "vitest": "^5.1.1"
   },
-  "description": "Routine Tracker – a bilingual (Arabic/English), accessible tracker for recurring tasks like car maintenance and gardening. Web + Android via Capacitor.",
+  "description": "Inaya (عناية) – a bilingual (Arabic/English), accessible tracker for recurring care tasks like car maintenance and gardening. Web + Android via Capacitor.",
   "license": "MIT"
 }

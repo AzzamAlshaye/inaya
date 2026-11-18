@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.routinetracker.app',
-  appName: 'Routine Tracker',
+  appName: 'Inaya',
   webDir: 'dist',
   plugins: {
     // Edge-to-edge: the web app pads itself with env(safe-area-inset-*).

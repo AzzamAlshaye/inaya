@@ -1,9 +1,11 @@
-# Routine Tracker · متابعة المهام
+# عناية · Inaya
 
-A simple, accessible app for keeping track of recurring tasks — car maintenance, gardening, home upkeep, health appointments, pets, bills, or anything else you define yourself.
+**Inaya (عناية) means "care".** Take care of the things you care about.
+
+Inaya is a simple, accessible app for keeping track of recurring tasks — car maintenance, gardening, home upkeep, health appointments, pets, bills, or anything else you define yourself.
 It works as a **website** and as an **Android app** (built with React + Capacitor), in **Arabic and English** (it follows the device language automatically).
 
-تطبيق بسيط وسهل الاستخدام لمتابعة المهام الدورية — صيانة السيارة، العناية بالحديقة، صيانة المنزل، المواعيد الطبية، الحيوانات الأليفة، الفواتير، أو أي شيء تحدده بنفسك.
+«عناية» تطبيق بسيط وسهل الاستخدام لمتابعة المهام الدورية — صيانة السيارة، العناية بالحديقة، صيانة المنزل، المواعيد الطبية، الحيوانات الأليفة، الفواتير، أو أي شيء تحدده بنفسك.
 يعمل **كموقع ويب** و**كتطبيق أندرويد**، **بالعربية والإنجليزية** (يتبع لغة الجهاز تلقائيًا).
 
 | English | العربية |
@@ -13,9 +15,9 @@ It works as a **website** and as an **Android app** (built with React + Capacito
 ## Get the app · تحميل التطبيق
 
 - **Website:** __PAGES_URL__
-- **Android APK:** open the [latest release](__REPO_URL__/releases/tag/latest), download `RoutineTracker-debug.apk` on the phone and open it. Android will ask you to allow installing from this source the first time.
+- **Android APK:** open the [latest release](__REPO_URL__/releases/tag/latest), download `Inaya-debug.apk` on the phone and open it. Android will ask you to allow installing from this source the first time.
 - **الموقع:** __PAGES_URL__
-- **تطبيق أندرويد:** افتح [آخر إصدار](__REPO_URL__/releases/tag/latest) من الجوال، حمّل ملف `RoutineTracker-debug.apk` وافتحه. سيطلب أندرويد السماح بالتثبيت من هذا المصدر في المرة الأولى.
+- **تطبيق أندرويد:** افتح [آخر إصدار](__REPO_URL__/releases/tag/latest) من الجوال، حمّل ملف `Inaya-debug.apk` وافتحه. سيطلب أندرويد السماح بالتثبيت من هذا المصدر في المرة الأولى.
 
 ## Features · المزايا
 
@@ -97,7 +99,7 @@ Create a keystore once:
 keytool -genkey -v -keystore release.keystore -alias routine -keyalg RSA -keysize 2048 -validity 10000
 ```
 
-Then add these repository secrets (Settings → Secrets and variables → Actions): `ANDROID_KEYSTORE_BASE64` (output of `base64 -w0 release.keystore`), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. The workflow will then also produce a signed `RoutineTracker.apk` and a `RoutineTracker.aab` for the Play Store. Keep the keystore safe — you need the same one for every update.
+Then add these repository secrets (Settings → Secrets and variables → Actions): `ANDROID_KEYSTORE_BASE64` (output of `base64 -w0 release.keystore`), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. The workflow will then also produce a signed `Inaya.apk` and a `Inaya.aab` for the Play Store. Keep the keystore safe — you need the same one for every update.
 
 ## License
 
